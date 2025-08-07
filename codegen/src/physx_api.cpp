@@ -298,6 +298,41 @@ class OverlapHitCallbackTrampoline : public PxOverlapCallback
     }
 };
 
+typedef void (*UserControllerHitReportShapeHitCallback)(const PxControllerShapeHit &hit);
+typedef void (*UserControllerHitReportControllerHitCallback)(const PxControllersHit &hit);
+typedef void (*UserControllerHitReportObstacleHitCallback)(const PxControllerObstacleHit &hit);
+
+class UserControllerHitReportTrampoline : public PxUserControllerHitReport
+{
+  public:
+    UserControllerHitReportTrampoline(
+        UserControllerHitReportShapeHitCallback onShapeHitCallback,
+        UserControllerHitReportControllerHitCallback onControllerHitCallback,
+        UserControllerHitReportObstacleHitCallback onObstacleHitCallback)
+        : mOnShapeHitCallback(onShapeHitCallback),
+          mOnControllerHitCallback(onControllerHitCallback),
+          mOnObstacleHitCallback(onObstacleHitCallback) {}
+
+    UserControllerHitReportShapeHitCallback mOnShapeHitCallback;
+    UserControllerHitReportControllerHitCallback mOnControllerHitCallback;
+    UserControllerHitReportObstacleHitCallback mOnObstacleHitCallback;
+
+    void onShapeHit(const PxControllerShapeHit &hit) override
+    {
+        mOnShapeHitCallback(hit);
+    }
+
+    void onControllerHit(const PxControllersHit &hit) override
+    {
+        mOnControllerHitCallback(hit);
+    }
+
+    void onObstacleHit(const PxControllerObstacleHit &hit) override
+    {
+        mOnObstacleHitCallback(hit);
+    }
+};
+
 typedef void * (*AllocCallback)(uint64_t size, const char *typeName, const char *filename, int line, void *userdata);
 typedef void (*DeallocCallback)(void *ptr, void *userdata);
 
@@ -564,6 +599,17 @@ extern "C"
         // printf("Setting pointer to %p\n", filter);
         desc->filterShaderData     = (void *)&filterShaderData;
         desc->filterShaderDataSize = sizeof(FilterCallbackData);
+    }
+
+    PxUserControllerHitReport *create_user_controller_hit_report(UserControllerHitReportShapeHitCallback onShapeHit, UserControllerHitReportControllerHitCallback onControllerHit, UserControllerHitReportObstacleHitCallback onObstacleHit)
+    {
+        return new UserControllerHitReportTrampoline(onShapeHit, onControllerHit, onObstacleHit);
+    }
+
+    void destroy_user_controller_hit_report(PxUserControllerHitReport *hitReport)
+    {
+        UserControllerHitReportTrampoline *trampoline = static_cast<UserControllerHitReportTrampoline *>(hitReport);
+        delete trampoline;
     }
 
 	// Not generated, used only for testing and examples!

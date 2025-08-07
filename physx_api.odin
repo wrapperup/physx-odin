@@ -63,6 +63,10 @@ OverlapProcessTouchesCallbackExt :: #type proc "c" (^OverlapHit, u32, rawptr) ->
 
 FinalizeQueryCallbackExt :: #type proc "c" (rawptr);
 
+HitReportShapeHitCallbackExt :: #type proc "c" (#by_ptr hit: ControllerShapeHit);
+HitReportControllerHitCallbackExt :: #type proc "c" (#by_ptr hit: ControllersHit);
+HitReportObstacleHitCallbackExt :: #type proc "c" (#by_ptr hit: ControllerObstacleHit);
+
 AllocCallbackExt :: #type proc "c" (size: u64, type_name: cstring, filename: cstring, line: i32, user_data: rawptr) -> rawptr;
 DeallocCallbackExt :: #type proc "c" (ptr: rawptr, user_data: rawptr);
 ZoneStartCallbackExt :: #type proc "c" (type_name: cstring, detached: bool, ctx: u64, user_data: rawptr) -> rawptr;
@@ -179,6 +183,14 @@ foreign libphysx_api {
 		shader: SimulationFilterShaderExt,
 		call_default_filter_shader_first: u32,
 	) ---
+
+    create_user_controller_hit_report :: proc(
+		on_shape_hit: HitReportShapeHitCallbackExt,
+		on_controller_hit: HitReportControllerHitCallbackExt,
+		on_obstacle_hit: HitReportObstacleHitCallbackExt,
+	) -> ^UserControllerHitReport ---
+
+    destroy_user_controller_hit_report :: proc(hit_report: ^UserControllerHitReport) ---
 
 	/// Should only be used in testing etc! This isn't generated as we don't generate op functions.
 	AssertHandler_opCall_mut :: proc(
